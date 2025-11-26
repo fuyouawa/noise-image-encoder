@@ -1,0 +1,16 @@
+# Development dependencies for steganography-encoder
+# Install with: pip install -r requirements-dev.txt
+
+# Core dependencies
+-r requirements.txt
+
+# Development tools
+pytest>=7.0.0
+black>=22.0.0
+flake8>=4.0.0
+mypy>=0.991
+pre-commit>=2.20.0
+
+# Build tools
+pyinstaller>=5.0.0
+pyinstaller-hooks-contrib>=2022.0
