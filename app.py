@@ -64,10 +64,11 @@ class SteganographyEncoder:
             use_alpha = self.config_manager.get_use_alpha()
             top_margin_ratio = self.config_manager.get_top_margin_ratio()
             bottom_margin_ratio = self.config_manager.get_bottom_margin_ratio()
+            image_encryption_method = self.config_manager.get_image_encryption_method()
 
             # Process resource file
             steganography_image = self.resource_processor.process_resource_to_steganography(
-                file_path, compression_level, steganography_width, steganography_height, use_alpha, top_margin_ratio, bottom_margin_ratio
+                file_path, compression_level, steganography_width, steganography_height, use_alpha, top_margin_ratio, bottom_margin_ratio, image_encryption_method
             )
 
             # Save steganography image
@@ -89,9 +90,10 @@ class SteganographyEncoder:
             # Get configuration
             top_margin_ratio = self.config_manager.get_top_margin_ratio()
             bottom_margin_ratio = self.config_manager.get_bottom_margin_ratio()
+            image_encryption_method = self.config_manager.get_image_encryption_method()
 
             # Process steganography image
-            file_bytes, file_extension = self.resource_processor.process_steganography_to_resource(file_path, top_margin_ratio, bottom_margin_ratio)
+            file_bytes, file_extension = self.resource_processor.process_steganography_to_resource(file_path, top_margin_ratio, bottom_margin_ratio, image_encryption_method)
 
             # Save resource file
             output_path = self.resource_processor.get_output_path(file_path, "_decoded", custom_extension=file_extension)

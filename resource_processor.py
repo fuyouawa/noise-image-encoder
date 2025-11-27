@@ -9,9 +9,9 @@ import numpy as np
 import torch
 
 from utils.encoding import encode_steganography, decode_steganography
-from utils.format import file_extension_to_mime_type, mime_type_to_file_extension
-from utils.serialization import ResourceHeader, CompressionMode, RESOURCE_HEADER_SIZE
-
+from utils.format import file_extension_to_mime_type, mime_type_to_file_extension, static_image_formats
+from utils.serialization import ResourceHeader, CompressionMode, RESOURCE_HEADER_SIZE, SerializationFormat, split_bytes_with_headers
+from utils.image import bytes_list_to_image_batch, encrypt_image, image_to_bytes, bytes_to_image
 
 class ResourceProcessor:
     """资源文件处理器"""
@@ -19,19 +19,39 @@ class ResourceProcessor:
     def __init__(self):
         pass
 
-    def process_resource_to_steganography(self, file_path, compression_level, steganography_width, steganography_height, use_alpha, top_margin_ratio, bottom_margin_ratio):
+    def process_resource_to_steganography(self, file_path, compression_level, steganography_width, steganography_height, use_alpha, top_margin_ratio, bottom_margin_ratio, image_encryption_method):
         """处理普通资源文件转换为隐写图像"""
         try:
-            # Read file as raw bytes
-            with open(file_path, 'rb') as f:
-                file_bytes = f.read()
-
-            # Compress with zlib using configured compression level
-            compressed_data = zlib.compress(file_bytes, compression_level)
-
             # Get file extension and convert to MIME type
             file_extension = os.path.splitext(file_path)[1].lower().lstrip('.')
             mime_type = file_extension_to_mime_type(file_extension)
+
+            # Check if input file is an image and encryption is enabled
+            if mime_type in static_image_formats and image_encryption_method != "none":
+                # Open image and apply encryption
+                with Image.open(file_path) as img:
+                    # Convert PIL image to numpy array
+                    img_array = np.array(img)
+
+                    # Convert to float32 [0, 1] range
+                    if img_array.dtype == np.uint8:
+                        img_array = img_array.astype(np.float32) / 255.0
+
+                    # Add batch dimension and convert to tensor
+                    image_tensor = torch.from_numpy(img_array).unsqueeze(0)
+
+                    # Apply encryption
+                    encrypted_image = encrypt_image(image_tensor, image_encryption_method)
+
+                    # Convert encrypted image back to bytes
+                    file_bytes = image_to_bytes(encrypted_image, format=mime_type)
+            else:
+                # Read file as raw bytes (original behavior)
+                with open(file_path, 'rb') as f:
+                    file_bytes = f.read()
+
+            # Compress with zlib using configured compression level
+            compressed_data = zlib.compress(file_bytes, compression_level)
 
             # Create ResourceHeader with MIME type and zlib compression
             resource_header = ResourceHeader.from_mime_type(
@@ -61,7 +81,7 @@ class ResourceProcessor:
         except Exception as e:
             raise Exception(f"处理文件时出错: {str(e)}")
 
-    def process_steganography_to_resource(self, file_path, top_margin_ratio, bottom_margin_ratio):
+    def process_steganography_to_resource(self, file_path, top_margin_ratio, bottom_margin_ratio, image_encryption_method):
         """处理隐写图像转换为原始资源文件"""
         try:
             # Load steganography image
@@ -77,19 +97,44 @@ class ResourceProcessor:
             # Parse ResourceHeader
             resource_header = ResourceHeader.from_bytes(header_bytes)
 
-            # Get file extension from resource header mime_type using mime_type_to_file_extension
-            file_extension = mime_type_to_file_extension(resource_header.mime_type)
-
             # Decompress with zlib if compression is enabled
             if resource_header.compression_mode == CompressionMode.ZLIB_COMPRESSION:
                 file_bytes = zlib.decompress(compressed_data)
             else:
                 file_bytes = compressed_data
 
+            mime_type = resource_header.mime_type
+            if resource_header.serialization_format == SerializationFormat.BYTES_WITH_HEADERS:
+                file_bytes, mime_type = self._process_bytes_with_headers(file_bytes, mime_type)
+
+            # Check if extracted file is an image and decryption is needed
+            elif mime_type in static_image_formats and image_encryption_method != "none":
+                # Convert bytes to image tensor
+                image_tensor, _ = bytes_to_image(file_bytes)
+
+                # Apply decryption (encrypt_image is symmetric for XOR operations)
+                decrypted_image = encrypt_image(image_tensor, image_encryption_method)
+
+                # Convert decrypted image back to bytes
+                file_bytes = image_to_bytes(decrypted_image, format=mime_type)
+
+            # Get file extension from resource header mime_type using mime_type_to_file_extension
+            file_extension = mime_type_to_file_extension(mime_type)
+
             return file_bytes, file_extension
 
         except Exception as e:
             raise Exception(f"处理隐写图像时出错: {str(e)}")
+        
+
+    def _process_bytes_with_headers(self, file_bytes: bytes, mime_type: str) -> tuple[bytes, str]:
+        if mime_type not in static_image_formats:
+            raise ValueError(f"Unsupported MIME type: {mime_type}")
+        file_bytes_list = split_bytes_with_headers(file_bytes)
+        image_batch, mask_batch = bytes_list_to_image_batch(file_bytes_list)
+        #TODO
+        pass
+
 
     def _load_steganography_image(self, file_path):
         """加载隐写图像并转换为张量"""
