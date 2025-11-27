@@ -10,7 +10,7 @@ import torch
 
 from utils.encoding import encode_steganography, decode_steganography
 from utils.format import file_extension_to_mime_type, mime_type_to_file_extension
-from utils.serialization import ResourceHeader, CompressionMode
+from utils.serialization import ResourceHeader, CompressionMode, RESOURCE_HEADER_SIZE
 
 
 class ResourceProcessor:
@@ -71,8 +71,8 @@ class ResourceProcessor:
             data_with_header = decode_steganography(steganography_image, top_margin_ratio=top_margin_ratio, bottom_margin_ratio=bottom_margin_ratio)
 
             # Extract ResourceHeader (first 4 bytes)
-            header_bytes = data_with_header[:4]
-            compressed_data = data_with_header[4:]
+            header_bytes = data_with_header[:RESOURCE_HEADER_SIZE]
+            compressed_data = data_with_header[RESOURCE_HEADER_SIZE:]
 
             # Parse ResourceHeader
             resource_header = ResourceHeader.from_bytes(header_bytes)

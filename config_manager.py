@@ -20,6 +20,10 @@ class ConfigManager:
         self.always_on_top = tk.BooleanVar(value=False)  # 窗口置顶选项
         self.on_always_on_top_changed = on_always_on_top_changed  # 置顶状态改变回调
 
+        # Decoding configuration variables
+        self.decode_top_margin_ratio = tk.DoubleVar(value=20.0)  # 20% top margin for decoding (stored as percentage)
+        self.decode_bottom_margin_ratio = tk.DoubleVar(value=20.0)  # 20% bottom margin for decoding (stored as percentage)
+
     def create_config_frame(self, parent):
         """创建配置选项框架"""
         # 创建手风琴控件
@@ -77,6 +81,28 @@ class ConfigManager:
         bottom_margin_scale.pack(side="left")
         tk.Label(bottom_margin_frame, text="%", font=("Arial", 8)).pack(side="left", padx=(5, 0))
 
+        # 解码选项分组
+        decoding_content = tk.Frame(accordion.main_frame)
+
+        # Decoding margin ratios
+        tk.Label(decoding_content, text="上预留区域:").grid(row=0, column=0, sticky="w", padx=(0, 5))
+        decode_top_margin_frame = tk.Frame(decoding_content)
+        decode_top_margin_frame.grid(row=0, column=1, sticky="w")
+
+        decode_top_margin_scale = tk.Scale(decode_top_margin_frame, from_=0, to=100, orient="horizontal",
+                                          variable=self.decode_top_margin_ratio, showvalue=True, length=150, resolution=1)
+        decode_top_margin_scale.pack(side="left")
+        tk.Label(decode_top_margin_frame, text="%", font=("Arial", 8)).pack(side="left", padx=(5, 0))
+
+        tk.Label(decoding_content, text="下预留区域:").grid(row=1, column=0, sticky="w", padx=(0, 5), pady=(10, 0))
+        decode_bottom_margin_frame = tk.Frame(decoding_content)
+        decode_bottom_margin_frame.grid(row=1, column=1, sticky="w", pady=(10, 0))
+
+        decode_bottom_margin_scale = tk.Scale(decode_bottom_margin_frame, from_=0, to=100, orient="horizontal",
+                                             variable=self.decode_bottom_margin_ratio, showvalue=True, length=150, resolution=1)
+        decode_bottom_margin_scale.pack(side="left")
+        tk.Label(decode_bottom_margin_frame, text="%", font=("Arial", 8)).pack(side="left", padx=(5, 0))
+
         # 应用程序设置分组
         app_settings_content = tk.Frame(accordion.main_frame)
 
@@ -88,6 +114,7 @@ class ConfigManager:
 
         # 添加分组到手风琴控件
         accordion.add_section("编码选项", encoding_content, is_expanded=True)
+        accordion.add_section("解码选项", decoding_content, is_expanded=True)
         accordion.add_section("应用程序设置", app_settings_content, is_expanded=True)
 
         return accordion.main_frame
@@ -101,11 +128,11 @@ class ConfigManager:
         """获取压缩等级"""
         return self.compression_level.get()
 
-    def get_noise_width(self):
+    def get_steganography_width(self):
         """获取隐写图像宽度"""
         return self.steganography_width.get()
 
-    def get_noise_height(self):
+    def get_steganography_height(self):
         """获取隐写图像高度"""
         return self.steganography_height.get()
 
@@ -113,13 +140,21 @@ class ConfigManager:
         """获取是否使用alpha通道"""
         return self.use_alpha.get()
 
-    def get_top_margin_ratio(self):
+    def get_encode_top_margin_ratio(self):
         """获取上预留区域百分比（返回小数）"""
         return self.top_margin_ratio.get() / 100.0
 
-    def get_bottom_margin_ratio(self):
+    def get_encode_bottom_margin_ratio(self):
         """获取下预留区域百分比（返回小数）"""
         return self.bottom_margin_ratio.get() / 100.0
+
+    def get_decode_top_margin_ratio(self):
+        """获取解码上预留区域百分比（返回小数）"""
+        return self.decode_top_margin_ratio.get() / 100.0
+
+    def get_decode_bottom_margin_ratio(self):
+        """获取解码下预留区域百分比（返回小数）"""
+        return self.decode_bottom_margin_ratio.get() / 100.0
 
     def get_always_on_top(self):
         """获取是否窗口置顶"""

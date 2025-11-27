@@ -59,11 +59,11 @@ class SteganographyEncoder:
 
             # Get configuration
             compression_level = self.config_manager.get_compression_level()
-            steganography_width = self.config_manager.get_noise_width()
-            steganography_height = self.config_manager.get_noise_height()
+            steganography_width = self.config_manager.get_steganography_width()
+            steganography_height = self.config_manager.get_steganography_height()
             use_alpha = self.config_manager.get_use_alpha()
-            top_margin_ratio = self.config_manager.get_top_margin_ratio()
-            bottom_margin_ratio = self.config_manager.get_bottom_margin_ratio()
+            top_margin_ratio = self.config_manager.get_encode_top_margin_ratio()
+            bottom_margin_ratio = self.config_manager.get_encode_bottom_margin_ratio()
 
             # Process resource file
             steganography_image = self.resource_processor.process_resource_to_steganography(
@@ -87,8 +87,8 @@ class SteganographyEncoder:
             self.status_label.config(text="正在处理隐写图像...")
 
             # Get configuration
-            top_margin_ratio = self.config_manager.get_top_margin_ratio()
-            bottom_margin_ratio = self.config_manager.get_bottom_margin_ratio()
+            top_margin_ratio = self.config_manager.get_decode_top_margin_ratio()
+            bottom_margin_ratio = self.config_manager.get_decode_bottom_margin_ratio()
 
             # Process steganography image
             file_bytes, file_extension = self.resource_processor.process_steganography_to_resource(file_path, top_margin_ratio, bottom_margin_ratio)
